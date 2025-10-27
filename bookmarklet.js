@@ -5,6 +5,11 @@
   }
   window.__searchMonitorInstalled = true;
 
+  // Initialize global collection array
+  if (!window.__collectedPlaces) {
+    window.__collectedPlaces = [];
+  }
+
   function matchesSearch(url) {
     try {
       const u = new URL(url, location.href);
@@ -57,6 +62,47 @@
     } catch (e) {
       return "[unserializable object: " + e.message + "]";
     }
+  }
+
+  // Create or update the export button
+  function updateExportButton() {
+    let btn = document.getElementById('__mapsExportBtn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = '__mapsExportBtn';
+      btn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 99999;
+        padding: 12px 24px;
+        background: #4285f4;
+        color: white;
+        border: none;
+        border-radius: 24px;
+        font-family: 'Google Sans', Arial, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        transition: all 0.2s;
+      `;
+      btn.onmouseover = () => {
+        btn.style.background = '#357ae8';
+        btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
+      };
+      btn.onmouseout = () => {
+        btn.style.background = '#4285f4';
+        btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+      };
+      btn.onclick = () => {
+        console.log('📍 Collected Places:', window.__collectedPlaces);
+        console.log(`Total: ${window.__collectedPlaces.length} places`);
+        alert(`Logged ${window.__collectedPlaces.length} places to console!`);
+      };
+      document.body.appendChild(btn);
+    }
+    btn.textContent = `📍 Export (${window.__collectedPlaces.length})`;
   }
 
   function maybePrettyPrintParsed(label, url, bodyText) {
@@ -139,7 +185,20 @@
               };
             });
 
-          console.groupCollapsed(`📍 Parsed ${results.length} search results`);
+          // Append new results to the collection (avoid duplicates by placeId)
+          results.forEach((result) => {
+            const existingIndex = window.__collectedPlaces.findIndex(
+              (p) => p.placeId && p.placeId === result.placeId
+            );
+            if (existingIndex === -1) {
+              window.__collectedPlaces.push(result);
+            }
+          });
+
+          // Update the export button
+          updateExportButton();
+
+          console.groupCollapsed(`📍 Parsed ${results.length} search results (Total: ${window.__collectedPlaces.length})`);
           results.forEach((result, idx) => {
             console.groupCollapsed(
               `${idx + 1}. ${result.coordinates.string || "Unnamed"} ${
