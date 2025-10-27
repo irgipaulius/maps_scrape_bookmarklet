@@ -4,9 +4,21 @@ A vibe-coded bookmarklet that reads and parses Google Maps, and allows downloadi
 
 ## What It Does
 
-This bookmarklet intercepts Google Maps search API responses and extracts detailed information about your saved locations. When you open any of your lists (including Starred Places), it parses the data on-the-fly and provides a download button to export everything as a clean CSV file.
+This bookmarklet intercepts Google Maps search API responses and extracts detailed information about your saved locations. When you open any of your lists (including Starred Places), it:
 
-**Extracted data includes:**
+- 📡 **Captures data in real-time** as Google Maps loads each batch of places (~20 at a time)
+- 🔄 **Accumulates locations** as you scroll, preventing duplicates automatically
+- 📊 **Displays a live counter** showing how many places have been collected
+- 💾 **Exports to CSV** in Google Takeout format with one click
+
+**CSV Export includes 5 columns:**
+- **Title**: Place name (or coordinates if unnamed)
+- **Note**: Timestamp of when the place was saved
+- **URL**: Direct Google Maps link (uses Place ID when available, coordinates as fallback)
+- **Tags**: Empty (for compatibility)
+- **Comment**: Empty (for compatibility)
+
+**Full data logged to console includes:**
 - Place name and ID
 - Full address and coordinates
 - Ratings and review counts
@@ -15,7 +27,6 @@ This bookmarklet intercepts Google Maps search API responses and extracts detail
 - Category/type information
 - Photos (URLs)
 - Price level
-- Timestamps (when available)
 
 ## How to Use
 
@@ -35,21 +46,26 @@ This bookmarklet intercepts Google Maps search API responses and extracts detail
 4. **Open your list**
    - Click on "Saved" in the left sidebar (or the menu icon ≡)
    - Select the list you want to scrape (e.g., "Starred places", "Want to go", etc.)
-   - Click your bookmark from the bookmarks bar
 
-5. **Scroll to load all items**
-   - **IMPORTANT**: Scroll down through your entire list until all locations are loaded
-   - Google Maps lazy-loads items, so you need to scroll to the bottom
+5. **Run the bookmarklet**
+   - Click your bookmark from the bookmarks bar
+   - A floating blue button will appear in the bottom-right corner: **📍 Export (0)**
+   - Open your browser's Developer Console (F12 or Cmd+Option+I on Mac) to see parsed results
+
+6. **Scroll to collect all items**
+   - **IMPORTANT**: Scroll down through your entire list to load all locations
+   - Google Maps lazy-loads ~20 items at a time
+   - Watch the button counter increase as places are collected: **📍 Export (20)**, **📍 Export (40)**, etc.
+   - Keep scrolling until you reach the bottom and the counter stops increasing
    - Wait for the page to finish loading (no more spinners)
 
-6. **Run the bookmarklet**
-   - Open your browser's Developer Console (F12 or Cmd+Option+I on Mac)
-   - You should see parsed results logged in the console
-   - A download button will appear or CSV will be automatically generated
+7. **Download your CSV**
+   - Click the **📍 Export** button when you've loaded all your places
+   - The CSV will download automatically
+   - Console will show a grouped log of all collected places
+   - Open the CSV in Excel, Google Sheets, or any spreadsheet software
 
-7. **Download your data**
-   - Your locations will be exported as a CSV file
-   - Open in Excel, Google Sheets, or any spreadsheet software
+**Note**: The bookmarklet collects data in real-time as you scroll. If you close the page, you'll lose uncollected data. The export button prevents duplicates automatically.
 
 ## 🔒 Security & Trust
 
