@@ -96,9 +96,55 @@
         btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
       };
       btn.onclick = () => {
-        console.log('📍 Collected Places:', window.__collectedPlaces);
-        console.log(`Total: ${window.__collectedPlaces.length} places`);
-        alert(`Logged ${window.__collectedPlaces.length} places to console!`);
+        const places = window.__collectedPlaces;
+        
+        // Log grouped results like the parsing output
+        console.groupCollapsed(`📍 Collected Places (${places.length} total)`);
+        places.forEach((result, idx) => {
+          console.groupCollapsed(
+            `${idx + 1}. ${result.name || result.coordinates.string || "Unnamed"} ${
+              result.rating ? "⭐ " + result.rating : ""
+            }`
+          );
+          console.log(result);
+          console.groupEnd();
+        });
+        console.groupEnd();
+        
+        // Generate CSV in Google Takeout format
+        const csvRows = ['Title,Note,URL,Tags,Comment'];
+        places.forEach(place => {
+          const title = (place.name || place.coordinates.string || '').replace(/"/g, '""');
+          const note = (place.timestampDate || '').replace(/"/g, '""');
+          const url = place.placeId 
+            ? `https://www.google.com/maps/place/?q=place_id:${place.placeId}`
+            : (place.coordinates.lat && place.coordinates.lng)
+              ? `https://www.google.com/maps/search/${place.coordinates.lat},${place.coordinates.lng}`
+              : '';
+          const tags = '';
+          const comment = '';
+          
+          csvRows.push(`"${title}","${note}",${url},${tags},${comment}`);
+        });
+        
+        const csvContent = csvRows.join('\n');
+        
+        // Log CSV content
+        console.log('\n📄 CSV Content:\n');
+        console.log(csvContent);
+        
+        // Download CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `google-maps-starred-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`Downloaded ${places.length} places as CSV!`);
       };
       document.body.appendChild(btn);
     }
@@ -154,12 +200,34 @@
                 }
               }
               
+              // Extract Place ID - must start with "ChIJ" to be valid
+              // Not all places have Place IDs - that's okay, we'll use coordinates
+              let placeId = null;
+              try {
+                // Try direct location first
+                const candidate = data[24]?.[0]?.[4];
+                if (typeof candidate === 'string' && candidate.startsWith('ChIJ')) {
+                  placeId = candidate;
+                }
+                
+                // Fallback: extract from reviews URL if present
+                if (!placeId && data[4]?.[3]?.[0]) {
+                  const reviewsUrl = data[4][3][0];
+                  if (typeof reviewsUrl === 'string') {
+                    const match = reviewsUrl.match(/placeid=([A-Za-z0-9_-]+)/);
+                    if (match && match[1].startsWith('ChIJ')) {
+                      placeId = match[1];
+                    }
+                  }
+                }
+              } catch {}
+              
               return {
                 id: data[1] || null,
                 name:
                   data[6] ||
                   (Array.isArray(data[3]) ? data[3].join(", ") : null),
-                placeId: data[89] || data[10] || null,
+                placeId: placeId,
                 coordinates: {
                   lat: data[9]?.[2] || null,
                   lng: data[9]?.[3] || null,
